@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {View, Text, ImageBackground, StyleSheet, StatusBar, TouchableOpacity, TextInput} from 'react-native';
+import {View, Text, ImageBackground, StyleSheet, StatusBar, TouchableOpacity, TextInput, Alert} from 'react-native';
 import BackImg from '../images/carIdentifier.jpg';
 import FlatButton from './button';
 import {Actions} from 'react-native-router-flux';
@@ -12,26 +12,78 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BottomSheet from 'reanimated-bottom-sheet';
 import Animated from 'react-native-reanimated';
 import ImagePicker from 'react-native-image-crop-picker';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios'; 
+import FormData from 'form-data';
 
 const IdentifyCar = () => {
+
+         const retrieveData = async () => {
+            try {
+                const value = await AsyncStorage.getItem('token');
+                if (value !== null) {
+                    console.log(value);
+                    return value;
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        }
 
         const takePhotoFromCamera = () => {
             ImagePicker.openCamera({
                 width: 300,
                 height: 400,
                 cropping: true,
+                allowsEditing: true,
             }).then(image => {
                 console.log(image);
             });
         }
-        const takePhotoFromLibrary = () => {
+        
+         const takePhotoFromLibrary = () => {
             ImagePicker.openPicker({
-                width: 300,
-                height: 400,
+                width: 1400,
+                height: 900,
                 cropping: true,
-            }).then(image => {
-                console.log(image);
+                allowsEditing: true,
+            }).then(async image => {
+                token = await retrieveData();
+                //console.log("IMAGINE",image);
+
+                let localUri = image.path;
+                //console.log(localUri)
+                let filename = localUri.split('/').pop();
+                let match = /\.(\w+)$/.exec(filename);
+                let type = match ? `image/${match[1]}` : `image`; 
+                
+                let data = new FormData();
+                data.append('image', { uri: localUri, name:'photo.png',
+                                    filename: filename, type: type });
+                data.append('Content-Type','image/png');
+
+                console.log(data);
+                //console.log(token); 
+               
+                config = {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': `multipart/form-data`
+                    }
+                }
+                
+                await axios.post('http://10.0.2.2:5000/api/carIdentifier', data, config     
+                ).then(response => {
+                    Alert.alert('Mașina este: ',JSON.stringify(response.data[0]));
+                    console.log(response.data);
+                    Alert.alert('S-a identificat mașina'); 
+                })
+                .catch((err) => {
+                    Alert.alert('A apărut o eroare în identificarea mașinii');
+                    console.log("mâncărică la burtică");
+                    console.log(err);
+                })
+                console.log(config);
             });
         }
 

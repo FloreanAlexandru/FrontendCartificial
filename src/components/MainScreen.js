@@ -29,7 +29,6 @@ class MainScreen extends Component {
           style={styles.container}
           onPress={() => {
             Actions.identifyCar();
-            retrieveData();
           }}
         />
       </Animatable.View>

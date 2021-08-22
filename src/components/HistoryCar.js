@@ -35,36 +35,68 @@ const HistoryCar = () => {
                 width: 300,
                 height: 400,
                 cropping: true,
+                allowsEditing: true,
             }).then(image => {
                 console.log(image);
             });
         }
+
         const takePhotoFromLibrary = () => {
             ImagePicker.openPicker({
-                width: 300,
-                height: 400,
+                width: 1280,
+                height: 800,
                 cropping: true,
-            }).then(image => {
-                token = retrieveData();
-                console.log("IMAGINE"+image);
+                allowsEditing: true,
+            }).then(async image => {
+                token = await retrieveData();
+                //console.log("IMAGINE",image);
+
+                let localUri = image.path;
+                //console.log(localUri)
+                let filename = localUri.split('/').pop();
+                let match = /\.(\w+)$/.exec(filename);
+                let type = match ? `image/${match[1]}` : `image`; 
+                
                 let data = new FormData();
-                data.append('image',image,image.name);
+                data.append('image', { uri: localUri, name:'photo.png',
+                                    filename: filename, type: type });
+                data.append('Content-Type','image/png');
+
                 console.log(data);
-                console.log(token);
+                //console.log(token); 
+               
                 config = {
                     headers: {
-                        'Authorization': `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2Mjg2OTQ4MzQsIm5iZiI6MTYyODY5NDgzNCwianRpIjoiMzQ5MTI4N2YtNGU4Zi00Yjc3LWFmMjMtMzA3OWIwMDY5ZmVhIiwiZXhwIjoxNjI5Mjk5NjM0LCJpZGVudGl0eSI6IjYxMGQ1ZWQ4MGQyNTNhOTU3NDdkNjA1ZiIsImZyZXNoIjpmYWxzZSwidHlwZSI6ImFjY2VzcyJ9.Gsu5NLpNPa6m73VYzT2Hjm0v5KygJMCNm5Istxikj44` 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': `multipart/form-data`
                     }
                 }
-                console.log(config);
-                axios.get('http://10.0.0.2:5000/api/decodeVIN',data, config     
+                
+                await axios.post('http://10.0.2.2:5000/api/decodeVIN', data, config     
                 ).then(response => {
-                    console.log("SALUT");
+                    console.log("SALUTare");
                     console.log(response);
                 })
                 .catch((err) => {
+                    console.log("mancarica la burtica");
                     console.log(err);
                 })
+                console.log(config);
+                // await fetch('http://10.0.0.2:5000/api/carIdentifier', {
+                //     method: 'POST', 
+                //     headers: {
+                //         'Authorization': `Bearer ${token}`,
+                //         'Content-Type': `multipart/form-data`
+                //     }, 
+                //     body: data
+                // }).then(response => {
+                //     console.log("SALUT");
+                //     console.log(response);
+                // })
+                // .catch((err) => {
+                //     console.log("mancarica la burtica");
+                //     console.log(err);
+                // })
             });
         }
 
